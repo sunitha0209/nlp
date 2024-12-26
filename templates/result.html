@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .sidebar {
+            background-color: #1f2833;
+            height: 100vh;
+            position: fixed;
+            width: 20%;
+            color: #fff;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+            }
+        }
+        .sidebar h4 {
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            margin: 10px 0;
+        }
+        .sidebar ul li a {
+            color: #c5c6c7;
+            text-decoration: none;
+            font-size: 1rem;
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .sidebar ul li a:hover, .sidebar ul li a.active {
+            background-color: #66fcf1;
+            color: #1f2833;
+        }
+        .content {
+            margin-left: 20%;
+            padding: 20px;
+            background-color: #ffffff;
+            min-height: 100vh;
+            width: 80%;
+        }
+        @media (max-width: 768px) {
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 10px;
+            }
+        }
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .chart-box {
+            flex: 1;
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .chart-box img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        #comparisonChart {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex flex-column flex-md-row">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h4 class="text-center">DASHBOARD</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#overall">Overall Sentiment Distribution</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#facility">Facility-Wise Sentiment Distribution</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#individual">Individual Facility Sentiment Pie Charts</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#comparison">Comparison</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#models">Model Performance</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#distilbert">DistilBERT Metrics</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <div class="tab-content">
+                <!-- Overall Sentiment Distribution -->
+                <div class="tab-pane fade show active" id="overall">
+                    <h2 class="text-center">Overall Sentiment Distribution</h2>
+                    <div class="chart-container">
+                        <div class="chart-box">
+                            <h4>Bar Chart</h4>
+                            <img src="{{ url_for('serve_file', file_id=bar_chart_id) }}" alt="Bar Chart">
+                        </div>
+                        <div class="chart-box">
+                            <h4>Pie Chart</h4>
+                            <img src="{{ url_for('serve_file', file_id=pie_chart_id) }}" alt="Pie Chart">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Facility-Wise Sentiment Distribution -->
+                <div class="tab-pane fade" id="facility">
+                    <h2 class="text-center">Facility-Wise Sentiment Distribution</h2>
+                    <div class="chart-container">
+                        <div class="chart-box">
+                            <h4>Stacked Bar Chart</h4>
+                            <img src="{{ url_for('serve_file', file_id=stacked_bar_chart_id) }}" alt="Stacked Bar Chart">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Individual Facility Sentiment Pie Charts -->
+                <div class="tab-pane fade" id="individual">
+                    <h2 class="text-center">Individual Facility Sentiment Pie Charts</h2>
+                    <div class="row g-4 justify-content-center">
+                        {% for facility, chart_id in pie_chart_ids.items() %}
+                        <div class="col-lg-4 col-md-6 col-sm-12">
+                            <div class="chart-box">
+                                <h4>{{ facility }}</h4>
+                                <img src="{{ url_for('serve_file', file_id=chart_id) }}" alt="Pie Chart">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Comparison Section -->
+                <div class="tab-pane fade" id="comparison">
+                    <h2 class="text-center">Bag-of-Words vs. TF-IDF Comparison</h2>
+                    <label for="columnDropdown" class="form-label mt-4">Select Column:</label>
+                    <select id="columnDropdown" class="form-select mb-4">
+                        {% for column in comparison_results.keys() %}
+                        <option value="{{ column }}">{{ column }}</option>
+                        {% endfor %}
+                    </select>
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+
+                <!-- Model Performance -->
+                <div class="tab-pane fade" id="models">
+                    <h2 class="text-center">Model Performance Metrics</h2>
+                    <div class="chart-box">
+                        <h4>Accuracy Comparison</h4>
+                        <img src="{{ url_for('serve_file', file_id=accuracy_chart_id) }}" alt="Accuracy Chart">
+                    </div>
+                    <div class="chart-box">
+                        <h4>Confusion Matrices</h4>
+                        <img src="{{ url_for('serve_file', file_id=confusion_chart_id) }}" alt="Confusion Matrices">
+                    </div>
+                </div>
+
+                <!-- DistilBERT Metrics -->
+                <div class="tab-pane fade" id="distilbert">
+                    <h2 class="text-center">DistilBERT Metrics</h2>
+                    <div class="chart-container">
+                        <div class="chart-box">
+                            <h4>Precision, Recall, and Polarity (Pie Chart)</h4>
+                            <img src="{{ url_for('serve_file', file_id=pie_chart_id_B) }}" alt="DistilBERT Metrics Pie Chart">
+                        </div>
+                        <!-- <div class="chart-box">
+                            <h4>F1 Scores</h4>
+                            <ul>
+                                <li>Happy: {{ f1_scores['Happy'] }}</li>
+                                <li>Neutral: {{ f1_scores['Neutral'] }}</li>
+                                <li>Unhappy: {{ f1_scores['Unhappy'] }}</li>
+                            </ul>
+                        </div> -->
+                        <!-- <div class="chart-box">
+                            <h4>Average Polarity Scores</h4>
+                            <ul>
+                                <li>Happy: {{ avg_polarity_scores['Happy'] }}</li>
+                                <li>Neutral: {{ avg_polarity_scores['Neutral'] }}</li>
+                                <li>Unhappy: {{ avg_polarity_scores['Unhappy'] }}</li>
+                            </ul>
+                        </div> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const comparisonResults = {{ comparison_results|tojson }};
+        const dropdown = document.getElementById('columnDropdown');
+        const chartCanvas = document.getElementById('comparisonChart').getContext('2d');
+        let comparisonChart;
+
+        function updateChart(column) {
+            if (!comparisonResults[column]) {
+                alert('No data available for the selected column.');
+                return;
+            }
+            const data = comparisonResults[column];
+            const chartData = {
+                labels: data.terms,
+                datasets: [
+                    {
+                        label: 'BoW',
+                        data: data.bow_values,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                    },
+                    {
+                        label: 'TF-IDF',
+                        data: data.tfidf_values,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)'
+                    }
+                ]
+            };
+
+            const config = {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: `${column} - BoW vs TF-IDF Comparison` }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Terms' } },
+                        y: { title: { display: true, text: 'Frequency/Score' } }
+                    }
+                }
+            };
+
+            if (comparisonChart) {
+                comparisonChart.destroy();
+            }
+            comparisonChart = new Chart(chartCanvas, config);
+        }
+
+        dropdown.addEventListener('change', (e) => updateChart(e.target.value));
+        if (dropdown.value) {
+            updateChart(dropdown.value);
+        }
+    </script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
